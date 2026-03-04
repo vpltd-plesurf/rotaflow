@@ -31,7 +31,6 @@ RUN npm ci --omit=dev --force
 
 # Copy built app from builder
 COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
 
 # Expose port
 EXPOSE 3000

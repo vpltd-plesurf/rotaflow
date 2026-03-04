@@ -3,9 +3,8 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { format, parseISO } from "date-fns";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function POST(request: Request) {
+  const resend = new Resend(process.env.RESEND_API_KEY);
   const { leaveRequestId } = await request.json();
   if (!leaveRequestId) return NextResponse.json({ error: "leaveRequestId required" }, { status: 400 });
 

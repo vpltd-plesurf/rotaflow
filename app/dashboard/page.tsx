@@ -95,7 +95,7 @@ export default async function DashboardPage() {
         {profile.role !== "barber" && (
           <>
             <Link href="/dashboard/leave">
-              <Card className="cursor-pointer hover:border-primary/50 transition-colors">
+              <Card className="cursor-pointer hover:border-primary/50 hover:-translate-y-0.5 transition-all duration-200">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium">Pending leave</CardTitle>
                   <CalendarOff className="h-4 w-4 text-muted-foreground" />
@@ -110,7 +110,7 @@ export default async function DashboardPage() {
             </Link>
 
             <Link href="/dashboard/swaps">
-              <Card className="cursor-pointer hover:border-primary/50 transition-colors">
+              <Card className="cursor-pointer hover:border-primary/50 hover:-translate-y-0.5 transition-all duration-200">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium">Pending swaps</CardTitle>
                   <ArrowLeftRight className="h-4 w-4 text-muted-foreground" />
@@ -125,7 +125,7 @@ export default async function DashboardPage() {
             </Link>
 
             <Link href="/dashboard/rota">
-              <Card className="cursor-pointer hover:border-primary/50 transition-colors">
+              <Card className="cursor-pointer hover:border-primary/50 hover:-translate-y-0.5 transition-all duration-200">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium">Rota</CardTitle>
                   <CalendarDays className="h-4 w-4 text-muted-foreground" />
@@ -137,7 +137,7 @@ export default async function DashboardPage() {
             </Link>
 
             <Link href="/dashboard/employees">
-              <Card className="cursor-pointer hover:border-primary/50 transition-colors">
+              <Card className="cursor-pointer hover:border-primary/50 hover:-translate-y-0.5 transition-all duration-200">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium">Team</CardTitle>
                   <Users className="h-4 w-4 text-muted-foreground" />
@@ -155,7 +155,7 @@ export default async function DashboardPage() {
       {profile.role === "barber" && (
         <div className="grid gap-4 sm:grid-cols-2">
           <Link href="/dashboard/rota">
-            <Card className="cursor-pointer hover:border-primary/50 transition-colors">
+            <Card className="cursor-pointer hover:border-primary/50 hover:-translate-y-0.5 transition-all duration-200">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium">View rota</CardTitle>
                 <CalendarDays className="h-4 w-4 text-muted-foreground" />
@@ -166,7 +166,7 @@ export default async function DashboardPage() {
             </Card>
           </Link>
           <Link href="/dashboard/leave">
-            <Card className="cursor-pointer hover:border-primary/50 transition-colors">
+            <Card className="cursor-pointer hover:border-primary/50 hover:-translate-y-0.5 transition-all duration-200">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium">Request leave</CardTitle>
                 <CalendarOff className="h-4 w-4 text-muted-foreground" />

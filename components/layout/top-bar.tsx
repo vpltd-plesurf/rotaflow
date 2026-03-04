@@ -2,16 +2,17 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import { Bell, LogOut, Menu } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import type { ProfileWithLocation } from "@/lib/supabase/types";
 
 interface TopBarProps {
   profile: ProfileWithLocation;
+  onMenuClick?: () => void;
 }
 
-export function TopBar({ profile }: TopBarProps) {
+export function TopBar({ profile, onMenuClick }: TopBarProps) {
   const router = useRouter();
 
   async function signOut() {
@@ -22,8 +23,14 @@ export function TopBar({ profile }: TopBarProps) {
 
   return (
     <header className="flex h-14 items-center justify-between border-b bg-card px-4 md:px-6">
-      {/* Mobile: menu placeholder */}
-      <Button variant="ghost" size="icon" className="md:hidden">
+      {/* Mobile hamburger */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="md:hidden"
+        onClick={onMenuClick}
+        aria-label="Open menu"
+      >
         <Menu className="h-5 w-5" />
       </Button>
 

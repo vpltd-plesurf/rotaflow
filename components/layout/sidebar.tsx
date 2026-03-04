@@ -13,10 +13,13 @@ import {
   Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import type { ProfileWithLocation } from "@/lib/supabase/types";
 
 interface SidebarProps {
   profile: ProfileWithLocation;
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
 }
 
 const navItems = [
@@ -70,34 +73,39 @@ const navItems = [
   },
 ];
 
-export function Sidebar({ profile }: SidebarProps) {
+function SidebarContent({
+  profile,
+  onNavClick,
+}: {
+  profile: ProfileWithLocation;
+  onNavClick?: () => void;
+}) {
   const pathname = usePathname();
-
   const visibleItems = navItems.filter((item) =>
     item.roles.includes(profile.role)
   );
 
   return (
-    <aside className="hidden w-56 flex-col border-r bg-card md:flex">
+    <div className="flex h-full flex-col">
       {/* Logo */}
-      <div className="flex h-14 items-center border-b px-4 gap-2">
-        <div className="flex h-7 w-7 items-center justify-center rounded bg-primary text-primary-foreground text-xs font-bold">
+      <div className="flex h-14 items-center border-b px-4 gap-2.5">
+        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-sm">
           RF
         </div>
-        <span className="font-semibold text-sm">RotaFlow</span>
+        <span className="font-semibold text-sm tracking-tight">RotaFlow</span>
       </div>
 
       {/* Location label */}
       {profile.location && (
         <div className="px-4 py-2 border-b">
-          <p className="text-xs text-muted-foreground truncate">
+          <p className="text-xs text-muted-foreground truncate font-medium">
             {profile.location.name}
           </p>
         </div>
       )}
 
       {/* Nav */}
-      <nav className="flex-1 p-2 space-y-0.5">
+      <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
         {visibleItems.map((item) => {
           const Icon = item.icon;
           const active =
@@ -108,11 +116,12 @@ export function Sidebar({ profile }: SidebarProps) {
             <Link
               key={item.href}
               href={item.href}
+              onClick={onNavClick}
               className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                "flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200",
                 active
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  ? "bg-primary/10 text-primary shadow-sm"
+                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground hover:translate-x-0.5"
               )}
             >
               <Icon className="h-4 w-4 shrink-0" />
@@ -127,6 +136,24 @@ export function Sidebar({ profile }: SidebarProps) {
         <p className="text-xs font-medium truncate">{profile.full_name}</p>
         <p className="text-xs text-muted-foreground capitalize">{profile.role}</p>
       </div>
-    </aside>
+    </div>
+  );
+}
+
+export function Sidebar({ profile, mobileOpen, onMobileClose }: SidebarProps) {
+  return (
+    <>
+      {/* Desktop sidebar */}
+      <aside className="hidden w-56 flex-col border-r bg-card md:flex">
+        <SidebarContent profile={profile} />
+      </aside>
+
+      {/* Mobile sidebar drawer */}
+      <Sheet open={mobileOpen} onOpenChange={(open) => !open && onMobileClose?.()}>
+        <SheetContent side="left" className="w-56 p-0 bg-card">
+          <SidebarContent profile={profile} onNavClick={onMobileClose} />
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }

@@ -25,7 +25,7 @@ jobs:
         run: ssh-keyscan -H ${{ secrets.SYNOLOGY_TAILSCALE_HOST }} >> ~/.ssh/known_hosts
 
       - name: Test SSH connection
-        run: ssh paullesurf@${{ secrets.SYNOLOGY_TAILSCALE_HOST }} 'echo "SSH OK" && which docker && id'
+        run: ssh paullesurf@${{ secrets.SYNOLOGY_TAILSCALE_HOST }} 'echo "SSH OK" && id'
 
       - name: Sync code to Synology
         run: |

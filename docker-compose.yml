@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  rotaflow:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rotaflow
+    restart: unless-stopped
+    ports:
+      - "3004:3000"
+    environment:
+      NODE_ENV: production
+    env_file:
+      - .env.local

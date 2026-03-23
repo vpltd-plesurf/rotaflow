@@ -1,8 +1,19 @@
 "use client";
 
-import { useState } from "react";
-import { format, addDays, parseISO } from "date-fns";
-import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { useState, useCallback } from "react";
+import { format } from "date-fns";
+import { Plus, ChevronLeft, ChevronRight, GripVertical } from "lucide-react";
+import {
+  DndContext,
+  DragOverlay,
+  useDraggable,
+  useDroppable,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragStartEvent,
+  type DragEndEvent,
+} from "@dnd-kit/core";
 import { cn, getWeekDays, fromDbDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ShiftCard } from "@/components/rota/shift-card";
@@ -25,6 +36,69 @@ interface WeeklyGridProps {
   ensureRota: () => Promise<string>;
 }
 
+/* ---------- Draggable shift wrapper ---------- */
+function DraggableShift({
+  shift,
+  canEdit,
+  onEdit,
+}: {
+  shift: ShiftWithEmployee;
+  canEdit: boolean;
+  onEdit: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: shift.id,
+    data: { shift },
+    disabled: !canEdit || shift.status !== "scheduled",
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn("relative group", isDragging && "opacity-30")}
+    >
+      {canEdit && shift.status === "scheduled" && (
+        <div
+          {...listeners}
+          {...attributes}
+          className="absolute -left-0.5 top-1/2 -translate-y-1/2 z-10 cursor-grab opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity"
+        >
+          <GripVertical className="h-3 w-3 text-muted-foreground" />
+        </div>
+      )}
+      <ShiftCard shift={shift} onClick={onEdit} canEdit={canEdit} />
+    </div>
+  );
+}
+
+/* ---------- Droppable cell wrapper ---------- */
+function DroppableCell({
+  id,
+  children,
+  className,
+  style,
+}: {
+  id: string;
+  children: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id });
+
+  return (
+    <td
+      ref={setNodeRef}
+      className={cn(
+        className,
+        isOver && "bg-primary/10 ring-1 ring-inset ring-primary/30"
+      )}
+      style={style}
+    >
+      {children}
+    </td>
+  );
+}
+
 export function WeeklyGrid({
   employees,
   shifts,
@@ -43,12 +117,17 @@ export function WeeklyGrid({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingShift, setEditingShift] = useState<ShiftWithEmployee | null>(null);
   const [newShiftContext, setNewShiftContext] = useState<{ employeeId: string; date: string } | null>(null);
+  const [activeShift, setActiveShift] = useState<ShiftWithEmployee | null>(null);
   const [mobileDayIdx, setMobileDayIdx] = useState(() => {
-    // Default to today if within the week, else Monday
     const today = format(new Date(), "yyyy-MM-dd");
     const idx = weekDays.findIndex((d) => format(d, "yyyy-MM-dd") === today);
     return idx >= 0 ? idx : 0;
   });
+
+  // Require 8px drag before activating (prevents accidental drags on click)
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
 
   function getShiftsFor(employeeId: string, date: Date): ShiftWithEmployee[] {
     const dateStr = format(date, "yyyy-MM-dd");
@@ -135,6 +214,59 @@ export function WeeklyGrid({
       toast({ variant: "destructive", title: "Error", description: String(e) });
     }
   }
+
+  /* ---------- Drag and drop handlers ---------- */
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    const shift = event.active.data.current?.shift as ShiftWithEmployee | undefined;
+    if (shift) setActiveShift(shift);
+  }, []);
+
+  const handleDragEnd = useCallback(
+    async (event: DragEndEvent) => {
+      setActiveShift(null);
+      const { active, over } = event;
+      if (!over) return;
+
+      const shift = active.data.current?.shift as ShiftWithEmployee | undefined;
+      if (!shift) return;
+
+      // Drop target ID format: "cell:{employeeId}:{date}"
+      const cellId = String(over.id);
+      if (!cellId.startsWith("cell:")) return;
+
+      const [, newEmployeeId, newDate] = cellId.split(":");
+      if (!newEmployeeId || !newDate) return;
+
+      // No change
+      if (shift.employee_id === newEmployeeId && shift.date === newDate) return;
+
+      // Find the new employee profile for optimistic update
+      const newEmployee = employees.find((e) => e.id === newEmployeeId);
+      if (!newEmployee) return;
+
+      // Optimistic update
+      const updatedShifts = shifts.map((s) =>
+        s.id === shift.id
+          ? { ...s, employee_id: newEmployeeId, date: newDate, employee: newEmployee }
+          : s
+      );
+      onShiftsChange(updatedShifts);
+
+      try {
+        const { error } = await supabase
+          .from("shifts")
+          .update({ employee_id: newEmployeeId, date: newDate })
+          .eq("id", shift.id);
+        if (error) throw error;
+        toast({ title: "Shift moved" });
+      } catch (e: unknown) {
+        // Revert on error
+        onShiftsChange(shifts);
+        toast({ variant: "destructive", title: "Error moving shift", description: String(e) });
+      }
+    },
+    [shifts, employees, supabase, onShiftsChange]
+  );
 
   // For barber: only show their own row
   const visibleEmployees = isBarber
@@ -235,91 +367,108 @@ export function WeeklyGrid({
         })}
       </div>
 
-      {/* ===== DESKTOP: table grid (md+) ===== */}
-      <div className="hidden md:block overflow-x-auto rounded-lg border">
-        <table className="w-full min-w-[700px] border-collapse text-sm">
-          <thead>
-            <tr className="border-b bg-muted/50">
-              <th className="w-32 border-r px-3 py-2 text-left font-medium text-muted-foreground">
-                Barber
-              </th>
-              {weekDays.map((day) => (
-                <th
-                  key={day.toISOString()}
+      {/* ===== DESKTOP: table grid with drag-and-drop (md+) ===== */}
+      <DndContext
+        sensors={sensors}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="hidden md:block overflow-x-auto rounded-lg border">
+          <table className="w-full min-w-[700px] border-collapse text-sm">
+            <thead>
+              <tr className="border-b bg-muted/50">
+                <th className="w-32 border-r px-3 py-2 text-left font-medium text-muted-foreground">
+                  Barber
+                </th>
+                {weekDays.map((day) => (
+                  <th
+                    key={day.toISOString()}
+                    className={cn(
+                      "border-r px-2 py-2 text-center font-medium last:border-r-0",
+                      format(day, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd")
+                        ? "bg-primary/5 text-primary"
+                        : "text-muted-foreground"
+                    )}
+                  >
+                    <div>{format(day, "EEE")}</div>
+                    <div className="text-xs font-normal">{format(day, "d MMM")}</div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {visibleEmployees.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="py-8 text-center text-muted-foreground">
+                    No barbers found for this location.
+                  </td>
+                </tr>
+              )}
+              {visibleEmployees.map((employee, rowIdx) => (
+                <tr
+                  key={employee.id}
                   className={cn(
-                    "border-r px-2 py-2 text-center font-medium last:border-r-0",
-                    format(day, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd")
-                      ? "bg-primary/5 text-primary"
-                      : "text-muted-foreground"
+                    "border-b last:border-b-0",
+                    rowIdx % 2 === 0 ? "bg-background" : "bg-muted/20"
                   )}
                 >
-                  <div>{format(day, "EEE")}</div>
-                  <div className="text-xs font-normal">{format(day, "d MMM")}</div>
-                </th>
+                  <td className="border-r px-3 py-2 font-medium whitespace-nowrap">
+                    {employee.full_name}
+                  </td>
+                  {weekDays.map((day) => {
+                    const dateStr = format(day, "yyyy-MM-dd");
+                    const dayShifts = getShiftsFor(employee.id, day);
+                    return (
+                      <DroppableCell
+                        key={day.toISOString()}
+                        id={`cell:${employee.id}:${dateStr}`}
+                        className="border-r px-1 py-1 align-top last:border-r-0 transition-colors"
+                        style={{ minWidth: 90, minHeight: 60 }}
+                      >
+                        <div className="flex flex-col gap-0.5">
+                          {dayShifts.map((shift) => (
+                            <DraggableShift
+                              key={shift.id}
+                              shift={shift}
+                              canEdit={canEdit}
+                              onEdit={() => openEdit(shift)}
+                            />
+                          ))}
+                          {canEdit && dayShifts.length === 0 && (
+                            <button
+                              onClick={() => openNew(employee.id, day)}
+                              className="flex h-10 w-full items-center justify-center rounded border border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-colors"
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                          {canEdit && dayShifts.length > 0 && (
+                            <button
+                              onClick={() => openNew(employee.id, day)}
+                              className="flex h-5 w-full items-center justify-center rounded text-muted-foreground opacity-0 hover:opacity-100 hover:text-primary transition-opacity"
+                            >
+                              <Plus className="h-3 w-3" />
+                            </button>
+                          )}
+                        </div>
+                      </DroppableCell>
+                    );
+                  })}
+                </tr>
               ))}
-            </tr>
-          </thead>
-          <tbody>
-            {visibleEmployees.length === 0 && (
-              <tr>
-                <td colSpan={8} className="py-8 text-center text-muted-foreground">
-                  No barbers found for this location.
-                </td>
-              </tr>
-            )}
-            {visibleEmployees.map((employee, rowIdx) => (
-              <tr
-                key={employee.id}
-                className={cn(
-                  "border-b last:border-b-0",
-                  rowIdx % 2 === 0 ? "bg-background" : "bg-muted/20"
-                )}
-              >
-                <td className="border-r px-3 py-2 font-medium whitespace-nowrap">
-                  {employee.full_name}
-                </td>
-                {weekDays.map((day) => {
-                  const dayShifts = getShiftsFor(employee.id, day);
-                  return (
-                    <td
-                      key={day.toISOString()}
-                      className="border-r px-1 py-1 align-top last:border-r-0"
-                      style={{ minWidth: 90, minHeight: 60 }}
-                    >
-                      <div className="flex flex-col gap-0.5">
-                        {dayShifts.map((shift) => (
-                          <ShiftCard
-                            key={shift.id}
-                            shift={shift}
-                            onClick={() => openEdit(shift)}
-                            canEdit={canEdit}
-                          />
-                        ))}
-                        {canEdit && dayShifts.length === 0 && (
-                          <button
-                            onClick={() => openNew(employee.id, day)}
-                            className="flex h-10 w-full items-center justify-center rounded border border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-colors"
-                          >
-                            <Plus className="h-3.5 w-3.5" />
-                          </button>
-                        )}
-                        {canEdit && dayShifts.length > 0 && (
-                          <button
-                            onClick={() => openNew(employee.id, day)}
-                            className="flex h-5 w-full items-center justify-center rounded text-muted-foreground opacity-0 hover:opacity-100 hover:text-primary transition-opacity"
-                          >
-                            <Plus className="h-3 w-3" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Drag overlay — floating preview of the shift being dragged */}
+        <DragOverlay>
+          {activeShift && (
+            <div className="w-24 opacity-90 shadow-lg rounded">
+              <ShiftCard shift={activeShift} onClick={() => {}} canEdit={false} />
+            </div>
+          )}
+        </DragOverlay>
+      </DndContext>
 
       <ShiftDialog
         open={dialogOpen}

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { format, addWeeks, subWeeks } from "date-fns";
-import { ChevronLeft, ChevronRight, Copy, Send, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Copy, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { WeeklyGrid } from "@/components/rota/weekly-grid";
+import { TemplateMenu } from "@/components/rota/template-menu";
 import { getWeekStart, toDbDate, formatCurrency } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -237,7 +238,16 @@ export function RotaView({
 
         {/* Actions */}
         {canEdit && locationId && (
-          <div className="ml-auto flex gap-2">
+          <div className="ml-auto flex flex-wrap gap-2">
+            {profile.role === "admin" && (
+              <TemplateMenu
+                locationId={locationId}
+                shifts={shifts}
+                weekStart={weekStart}
+                ensureRota={ensureRota}
+                onApplied={() => router.refresh()}
+              />
+            )}
             <Button variant="outline" size="sm" onClick={handleCopyPreviousWeek} disabled={copying}>
               <Copy className="h-4 w-4" />
               {copying ? "Copying…" : "Copy last week"}

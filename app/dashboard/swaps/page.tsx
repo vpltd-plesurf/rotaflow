@@ -49,11 +49,25 @@ export default async function SwapsPage() {
     myShifts = data ?? [];
   }
 
+  // Colleagues at the same location (for swap target picker)
+  let colleagues: { id: string; full_name: string }[] = [];
+  if (profile.location_id) {
+    const { data } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .eq("location_id", profile.location_id)
+      .eq("role", "barber")
+      .neq("id", user.id)
+      .order("full_name");
+    colleagues = data ?? [];
+  }
+
   return (
     <SwapsPageClient
       profile={profile}
       swaps={filtered as never}
       myShifts={myShifts}
+      colleagues={colleagues}
     />
   );
 }

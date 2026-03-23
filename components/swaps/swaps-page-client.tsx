@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { format, parseISO } from "date-fns";
-import { ArrowLeftRight } from "lucide-react";
+import { ArrowLeftRight, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SwapProposalForm } from "@/components/swaps/swap-proposal-form";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import type { ProfileWithLocation } from "@/lib/supabase/types";
@@ -30,6 +32,7 @@ interface SwapsPageClientProps {
   profile: ProfileWithLocation;
   swaps: SwapWithDetails[];
   myShifts: { id: string; date: string; start_time: string; end_time: string }[];
+  colleagues: { id: string; full_name: string }[];
 }
 
 const statusVariant: Record<string, "warning" | "success" | "destructive" | "outline"> = {
@@ -43,12 +46,15 @@ function formatShift(shift: { date: string; start_time: string; end_time: string
   return `${format(parseISO(shift.date), "EEE d MMM")} · ${shift.start_time.slice(0, 5)}–${shift.end_time.slice(0, 5)}`;
 }
 
-export function SwapsPageClient({ profile, swaps: initialSwaps, myShifts }: SwapsPageClientProps) {
+export function SwapsPageClient({ profile, swaps: initialSwaps, myShifts, colleagues }: SwapsPageClientProps) {
+  const router = useRouter();
   const supabase = createClient();
   const [swaps, setSwaps] = useState(initialSwaps);
+  const [showForm, setShowForm] = useState(false);
   const [processing, setProcessing] = useState<string | null>(null);
 
   const canManage = profile.role === "admin" || profile.role === "manager";
+  const isBarber = profile.role === "barber";
   const pending = swaps.filter((s) => s.status === "pending");
   const history = swaps.filter((s) => s.status !== "pending");
 
@@ -84,6 +90,17 @@ export function SwapsPageClient({ profile, swaps: initialSwaps, myShifts }: Swap
           .eq("id", swap.shift_id);
       }
 
+      // Notify requester
+      try {
+        await fetch("/api/swaps/notify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "approved", swapId: swap.id }),
+        });
+      } catch {
+        // Non-critical
+      }
+
       setSwaps((prev) =>
         prev.map((s) => s.id === swap.id ? { ...s, status: "approved" as const } : s)
       );
@@ -106,6 +123,18 @@ export function SwapsPageClient({ profile, swaps: initialSwaps, myShifts }: Swap
           reviewed_at: new Date().toISOString(),
         })
         .eq("id", id);
+
+      // Notify requester
+      try {
+        await fetch("/api/swaps/notify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "denied", swapId: id }),
+        });
+      } catch {
+        // Non-critical
+      }
+
       setSwaps((prev) =>
         prev.map((s) => s.id === id ? { ...s, status: "denied" as const } : s)
       );
@@ -119,12 +148,40 @@ export function SwapsPageClient({ profile, swaps: initialSwaps, myShifts }: Swap
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Shift Swaps</h1>
-        <p className="text-sm text-muted-foreground">
-          {canManage ? "Review and approve swap requests" : "View your shift swap requests"}
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Shift Swaps</h1>
+          <p className="text-sm text-muted-foreground">
+            {canManage ? "Review and approve swap requests" : "Request and view shift swaps"}
+          </p>
+        </div>
+        {isBarber && (
+          <Button onClick={() => setShowForm(true)}>
+            <Plus className="h-4 w-4" />
+            Request swap
+          </Button>
+        )}
       </div>
+
+      {showForm && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">New swap request</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <SwapProposalForm
+              requesterId={profile.id}
+              myShifts={myShifts}
+              colleagues={colleagues}
+              onSuccess={() => {
+                setShowForm(false);
+                router.refresh();
+              }}
+              onCancel={() => setShowForm(false)}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {pending.length > 0 && (
         <section>
@@ -210,7 +267,7 @@ export function SwapsPageClient({ profile, swaps: initialSwaps, myShifts }: Swap
         </section>
       )}
 
-      {swaps.length === 0 && (
+      {swaps.length === 0 && !showForm && (
         <div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
           No swap requests yet.
         </div>

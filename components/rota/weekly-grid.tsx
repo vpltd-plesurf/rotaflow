@@ -22,6 +22,8 @@ import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import type { ProfileWithLocation, ShiftWithEmployee, WeeklyHours } from "@/lib/supabase/types";
 
+type LeaveRange = { employee_id: string; start_date: string; end_date: string };
+
 interface WeeklyGridProps {
   employees: ProfileWithLocation[];
   shifts: ShiftWithEmployee[];
@@ -34,6 +36,7 @@ interface WeeklyGridProps {
   weeklyHours?: WeeklyHours;
   onShiftsChange: (shifts: ShiftWithEmployee[]) => void;
   ensureRota: () => Promise<string>;
+  leaveRequests?: LeaveRange[];
 }
 
 /* ---------- Draggable shift wrapper ---------- */
@@ -111,6 +114,7 @@ export function WeeklyGrid({
   weeklyHours,
   onShiftsChange,
   ensureRota,
+  leaveRequests,
 }: WeeklyGridProps) {
   const supabase = createClient();
   const weekDays = getWeekDays(fromDbDate(weekStart));
@@ -123,6 +127,26 @@ export function WeeklyGrid({
     const idx = weekDays.findIndex((d) => format(d, "yyyy-MM-dd") === today);
     return idx >= 0 ? idx : 0;
   });
+
+  // Check if an employee is on approved leave for a given date
+  function isOnLeave(employeeId: string, dateStr: string): boolean {
+    if (!leaveRequests?.length) return false;
+    return leaveRequests.some(
+      (lr) => lr.employee_id === employeeId && lr.start_date <= dateStr && lr.end_date >= dateStr
+    );
+  }
+
+  // Count how many employees are on leave for a given date
+  function leaveCountForDate(dateStr: string): number {
+    if (!leaveRequests?.length) return 0;
+    const ids = new Set<string>();
+    for (const lr of leaveRequests) {
+      if (lr.start_date <= dateStr && lr.end_date >= dateStr) {
+        ids.add(lr.employee_id);
+      }
+    }
+    return ids.size;
+  }
 
   // Require 8px drag before activating (prevents accidental drags on click)
   const sensors = useSensors(
@@ -326,9 +350,19 @@ export function WeeklyGrid({
         </div>
 
         {/* Day heading */}
-        <p className="text-sm font-medium text-muted-foreground">
-          {format(mobileDay, "EEEE d MMMM")}
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-medium text-muted-foreground">
+            {format(mobileDay, "EEEE d MMMM")}
+          </p>
+          {(() => {
+            const lc = leaveCountForDate(format(mobileDay, "yyyy-MM-dd"));
+            return lc > 0 ? (
+              <span className="text-[10px] font-medium text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">
+                {lc} off
+              </span>
+            ) : null;
+          })()}
+        </div>
 
         {/* Employee cards for this day */}
         {visibleEmployees.length === 0 && (
@@ -339,10 +373,20 @@ export function WeeklyGrid({
 
         {visibleEmployees.map((employee) => {
           const dayShifts = getShiftsFor(employee.id, mobileDay);
+          const mobileDateStr = format(mobileDay, "yyyy-MM-dd");
+          const onLeaveMobile = isOnLeave(employee.id, mobileDateStr);
           return (
-            <div key={employee.id} className="rounded-xl border bg-card p-3 space-y-2">
-              <p className="text-sm font-medium">{employee.full_name}</p>
-              {dayShifts.length === 0 && !canEdit && (
+            <div key={employee.id} className={cn(
+              "rounded-xl border p-3 space-y-2",
+              onLeaveMobile ? "bg-amber-50/60 border-amber-200" : "bg-card"
+            )}>
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium">{employee.full_name}</p>
+                {onLeaveMobile && (
+                  <span className="text-[10px] font-medium text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">On leave</span>
+                )}
+              </div>
+              {dayShifts.length === 0 && !canEdit && !onLeaveMobile && (
                 <p className="text-xs text-muted-foreground">No shift</p>
               )}
               {dayShifts.map((shift) => (
@@ -392,6 +436,14 @@ export function WeeklyGrid({
                   >
                     <div>{format(day, "EEE")}</div>
                     <div className="text-xs font-normal">{format(day, "d MMM")}</div>
+                    {(() => {
+                      const lc = leaveCountForDate(format(day, "yyyy-MM-dd"));
+                      return lc > 0 ? (
+                        <div className="mt-0.5 text-[10px] font-normal text-amber-600">
+                          {lc} off
+                        </div>
+                      ) : null;
+                    })()}
                   </th>
                 ))}
               </tr>
@@ -418,14 +470,23 @@ export function WeeklyGrid({
                   {weekDays.map((day) => {
                     const dateStr = format(day, "yyyy-MM-dd");
                     const dayShifts = getShiftsFor(employee.id, day);
+                    const onLeave = isOnLeave(employee.id, dateStr);
                     return (
                       <DroppableCell
                         key={day.toISOString()}
                         id={`cell:${employee.id}:${dateStr}`}
-                        className="border-r px-1 py-1 align-top last:border-r-0 transition-colors"
+                        className={cn(
+                          "border-r px-1 py-1 align-top last:border-r-0 transition-colors",
+                          onLeave && "bg-amber-50/80"
+                        )}
                         style={{ minWidth: 90, minHeight: 60 }}
                       >
                         <div className="flex flex-col gap-0.5">
+                          {onLeave && dayShifts.filter(s => s.status === "leave_block").length === 0 && (
+                            <div className="rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
+                              On leave
+                            </div>
+                          )}
                           {dayShifts.map((shift) => (
                             <DraggableShift
                               key={shift.id}
@@ -434,7 +495,7 @@ export function WeeklyGrid({
                               onEdit={() => openEdit(shift)}
                             />
                           ))}
-                          {canEdit && dayShifts.length === 0 && (
+                          {canEdit && dayShifts.length === 0 && !onLeave && (
                             <button
                               onClick={() => openNew(employee.id, day)}
                               className="flex h-10 w-full items-center justify-center rounded border border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-colors"

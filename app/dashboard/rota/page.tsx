@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { RotaView } from "@/components/rota/rota-view";
 import { getWeekStart, toDbDate } from "@/lib/utils";
+import { format, addDays } from "date-fns";
 
 export default async function RotaPage({
   searchParams,
@@ -72,6 +73,21 @@ export default async function RotaPage({
         .order("start_time")).data ?? []
     : [];
 
+  // Fetch approved leave overlapping this week for the location's employees
+  const weekEndStr = format(addDays(weekStart, 6), "yyyy-MM-dd");
+  let leaveRequests: { employee_id: string; start_date: string; end_date: string }[] = [];
+  if (locationId) {
+    const { data } = await supabase
+      .from("leave_requests")
+      .select("employee_id, start_date, end_date")
+      .eq("status", "approved")
+      .lte("start_date", weekEndStr)
+      .gte("end_date", weekStartStr);
+    // Filter to employees at this location
+    const employeeIds = new Set((employees ?? []).map((e) => e.id));
+    leaveRequests = (data ?? []).filter((lr) => employeeIds.has(lr.employee_id));
+  }
+
   return (
     <RotaView
       profile={profile}
@@ -82,6 +98,7 @@ export default async function RotaPage({
       weekStart={weekStartStr}
       locationId={locationId}
       weeklyHours={currentLocation?.weekly_hours}
+      leaveRequests={leaveRequests}
     />
   );
 }

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   CalendarDays,
+  CalendarClock,
   Users,
   MapPin,
   CalendarOff,
@@ -28,6 +29,12 @@ const navItems = [
     label: "Overview",
     icon: LayoutDashboard,
     roles: ["admin", "manager", "barber"],
+  },
+  {
+    href: "/dashboard/my-shifts",
+    label: "My Shifts",
+    icon: CalendarClock,
+    roles: ["barber"],
   },
   {
     href: "/dashboard/rota",

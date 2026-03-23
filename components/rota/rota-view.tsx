@@ -26,6 +26,8 @@ import type {
   WeeklyHours,
 } from "@/lib/supabase/types";
 
+type LeaveRange = { employee_id: string; start_date: string; end_date: string };
+
 interface RotaViewProps {
   profile: ProfileWithLocation;
   locations: Location[];
@@ -35,6 +37,7 @@ interface RotaViewProps {
   weekStart: string;
   locationId: string | null;
   weeklyHours?: WeeklyHours;
+  leaveRequests?: LeaveRange[];
 }
 
 export function RotaView({
@@ -46,6 +49,7 @@ export function RotaView({
   weekStart,
   locationId,
   weeklyHours,
+  leaveRequests,
 }: RotaViewProps) {
   const router = useRouter();
   const supabase = createClient();
@@ -282,6 +286,7 @@ export function RotaView({
           weeklyHours={weeklyHours}
           onShiftsChange={setShifts}
           ensureRota={ensureRota}
+          leaveRequests={leaveRequests}
         />
       )}
     </div>

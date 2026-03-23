@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CalendarDays, Users, CalendarOff, ArrowLeftRight } from "lucide-react";
+import { CalendarDays, CalendarClock, Users, CalendarOff, ArrowLeftRight } from "lucide-react";
 import Link from "next/link";
 import { format, startOfWeek, endOfWeek } from "date-fns";
 
@@ -153,15 +153,26 @@ export default async function DashboardPage() {
 
       {/* Quick links for barbers */}
       {profile.role === "barber" && (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Link href="/dashboard/my-shifts">
+            <Card className="cursor-pointer hover:border-primary/50 hover:-translate-y-0.5 transition-all duration-200">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">My Shifts</CardTitle>
+                <CalendarClock className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">Your upcoming schedule</p>
+              </CardContent>
+            </Card>
+          </Link>
           <Link href="/dashboard/rota">
             <Card className="cursor-pointer hover:border-primary/50 hover:-translate-y-0.5 transition-all duration-200">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">View rota</CardTitle>
+                <CardTitle className="text-sm font-medium">Full rota</CardTitle>
                 <CalendarDays className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">See your upcoming shifts</p>
+                <p className="text-sm text-muted-foreground">See the weekly grid</p>
               </CardContent>
             </Card>
           </Link>

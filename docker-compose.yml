@@ -13,3 +13,23 @@ services:
       NODE_ENV: production
     env_file:
       - .env.local
+
+  keep-alive:
+    image: alpine:3.20
+    container_name: rotaflow-keep-alive
+    restart: unless-stopped
+    volumes:
+      - ./scripts/keep-alive.sh:/keep-alive.sh:ro
+    env_file:
+      - .env.local
+    # Run every 3 days: sleep 259200s = 72 hours
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        apk add --no-cache curl >/dev/null 2>&1
+        echo "Keep-alive started — pinging Supabase every 3 days"
+        while true; do
+          /bin/sh /keep-alive.sh
+          sleep 259200
+        done

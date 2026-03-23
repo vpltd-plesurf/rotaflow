@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { format, addDays, parseISO } from "date-fns";
-import { Plus } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn, getWeekDays, fromDbDate } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { ShiftCard } from "@/components/rota/shift-card";
 import { ShiftDialog } from "@/components/rota/shift-dialog";
 import { createClient } from "@/lib/supabase/client";
@@ -42,6 +43,12 @@ export function WeeklyGrid({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingShift, setEditingShift] = useState<ShiftWithEmployee | null>(null);
   const [newShiftContext, setNewShiftContext] = useState<{ employeeId: string; date: string } | null>(null);
+  const [mobileDayIdx, setMobileDayIdx] = useState(() => {
+    // Default to today if within the week, else Monday
+    const today = format(new Date(), "yyyy-MM-dd");
+    const idx = weekDays.findIndex((d) => format(d, "yyyy-MM-dd") === today);
+    return idx >= 0 ? idx : 0;
+  });
 
   function getShiftsFor(employeeId: string, date: Date): ShiftWithEmployee[] {
     const dateStr = format(date, "yyyy-MM-dd");
@@ -134,90 +141,185 @@ export function WeeklyGrid({
     ? employees.filter((e) => e.id === currentUserId)
     : employees;
 
+  const mobileDay = weekDays[mobileDayIdx];
+
   return (
-    <div className="overflow-x-auto rounded-lg border">
-      <table className="w-full min-w-[700px] border-collapse text-sm">
-        <thead>
-          <tr className="border-b bg-muted/50">
-            <th className="w-32 border-r px-3 py-2 text-left font-medium text-muted-foreground">
-              Barber
-            </th>
-            {weekDays.map((day) => (
-              <th
-                key={day.toISOString()}
+    <>
+      {/* ===== MOBILE: single-day card view (<md) ===== */}
+      <div className="md:hidden space-y-3">
+        {/* Day picker */}
+        <div className="flex items-center gap-1">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-9 w-9 shrink-0"
+            onClick={() => setMobileDayIdx((i) => Math.max(0, i - 1))}
+            disabled={mobileDayIdx === 0}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+
+          <div className="flex flex-1 gap-1 overflow-x-auto">
+            {weekDays.map((day, idx) => {
+              const isToday = format(day, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
+              return (
+                <button
+                  key={day.toISOString()}
+                  onClick={() => setMobileDayIdx(idx)}
+                  className={cn(
+                    "flex-1 min-w-[40px] rounded-lg py-1.5 text-center text-xs font-medium transition-colors",
+                    idx === mobileDayIdx
+                      ? "bg-primary text-primary-foreground"
+                      : isToday
+                        ? "bg-primary/10 text-primary"
+                        : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                  )}
+                >
+                  <div>{format(day, "EEE")}</div>
+                  <div className="text-[10px] font-normal">{format(day, "d")}</div>
+                </button>
+              );
+            })}
+          </div>
+
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-9 w-9 shrink-0"
+            onClick={() => setMobileDayIdx((i) => Math.min(6, i + 1))}
+            disabled={mobileDayIdx === 6}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* Day heading */}
+        <p className="text-sm font-medium text-muted-foreground">
+          {format(mobileDay, "EEEE d MMMM")}
+        </p>
+
+        {/* Employee cards for this day */}
+        {visibleEmployees.length === 0 && (
+          <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+            No barbers found for this location.
+          </div>
+        )}
+
+        {visibleEmployees.map((employee) => {
+          const dayShifts = getShiftsFor(employee.id, mobileDay);
+          return (
+            <div key={employee.id} className="rounded-xl border bg-card p-3 space-y-2">
+              <p className="text-sm font-medium">{employee.full_name}</p>
+              {dayShifts.length === 0 && !canEdit && (
+                <p className="text-xs text-muted-foreground">No shift</p>
+              )}
+              {dayShifts.map((shift) => (
+                <ShiftCard
+                  key={shift.id}
+                  shift={shift}
+                  onClick={() => openEdit(shift)}
+                  canEdit={canEdit}
+                />
+              ))}
+              {canEdit && (
+                <button
+                  onClick={() => openNew(employee.id, mobileDay)}
+                  className="flex h-9 w-full items-center justify-center gap-1 rounded-lg border border-dashed text-xs text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-colors"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add shift
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ===== DESKTOP: table grid (md+) ===== */}
+      <div className="hidden md:block overflow-x-auto rounded-lg border">
+        <table className="w-full min-w-[700px] border-collapse text-sm">
+          <thead>
+            <tr className="border-b bg-muted/50">
+              <th className="w-32 border-r px-3 py-2 text-left font-medium text-muted-foreground">
+                Barber
+              </th>
+              {weekDays.map((day) => (
+                <th
+                  key={day.toISOString()}
+                  className={cn(
+                    "border-r px-2 py-2 text-center font-medium last:border-r-0",
+                    format(day, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd")
+                      ? "bg-primary/5 text-primary"
+                      : "text-muted-foreground"
+                  )}
+                >
+                  <div>{format(day, "EEE")}</div>
+                  <div className="text-xs font-normal">{format(day, "d MMM")}</div>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {visibleEmployees.length === 0 && (
+              <tr>
+                <td colSpan={8} className="py-8 text-center text-muted-foreground">
+                  No barbers found for this location.
+                </td>
+              </tr>
+            )}
+            {visibleEmployees.map((employee, rowIdx) => (
+              <tr
+                key={employee.id}
                 className={cn(
-                  "border-r px-2 py-2 text-center font-medium last:border-r-0",
-                  format(day, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd")
-                    ? "bg-primary/5 text-primary"
-                    : "text-muted-foreground"
+                  "border-b last:border-b-0",
+                  rowIdx % 2 === 0 ? "bg-background" : "bg-muted/20"
                 )}
               >
-                <div>{format(day, "EEE")}</div>
-                <div className="text-xs font-normal">{format(day, "d MMM")}</div>
-              </th>
+                <td className="border-r px-3 py-2 font-medium whitespace-nowrap">
+                  {employee.full_name}
+                </td>
+                {weekDays.map((day) => {
+                  const dayShifts = getShiftsFor(employee.id, day);
+                  return (
+                    <td
+                      key={day.toISOString()}
+                      className="border-r px-1 py-1 align-top last:border-r-0"
+                      style={{ minWidth: 90, minHeight: 60 }}
+                    >
+                      <div className="flex flex-col gap-0.5">
+                        {dayShifts.map((shift) => (
+                          <ShiftCard
+                            key={shift.id}
+                            shift={shift}
+                            onClick={() => openEdit(shift)}
+                            canEdit={canEdit}
+                          />
+                        ))}
+                        {canEdit && dayShifts.length === 0 && (
+                          <button
+                            onClick={() => openNew(employee.id, day)}
+                            className="flex h-10 w-full items-center justify-center rounded border border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-colors"
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                        {canEdit && dayShifts.length > 0 && (
+                          <button
+                            onClick={() => openNew(employee.id, day)}
+                            className="flex h-5 w-full items-center justify-center rounded text-muted-foreground opacity-0 hover:opacity-100 hover:text-primary transition-opacity"
+                          >
+                            <Plus className="h-3 w-3" />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  );
+                })}
+              </tr>
             ))}
-          </tr>
-        </thead>
-        <tbody>
-          {visibleEmployees.length === 0 && (
-            <tr>
-              <td colSpan={8} className="py-8 text-center text-muted-foreground">
-                No barbers found for this location.
-              </td>
-            </tr>
-          )}
-          {visibleEmployees.map((employee, rowIdx) => (
-            <tr
-              key={employee.id}
-              className={cn(
-                "border-b last:border-b-0",
-                rowIdx % 2 === 0 ? "bg-background" : "bg-muted/20"
-              )}
-            >
-              <td className="border-r px-3 py-2 font-medium whitespace-nowrap">
-                {employee.full_name}
-              </td>
-              {weekDays.map((day) => {
-                const dayShifts = getShiftsFor(employee.id, day);
-                return (
-                  <td
-                    key={day.toISOString()}
-                    className="border-r px-1 py-1 align-top last:border-r-0"
-                    style={{ minWidth: 90, minHeight: 60 }}
-                  >
-                    <div className="flex flex-col gap-0.5">
-                      {dayShifts.map((shift) => (
-                        <ShiftCard
-                          key={shift.id}
-                          shift={shift}
-                          onClick={() => openEdit(shift)}
-                          canEdit={canEdit}
-                        />
-                      ))}
-                      {canEdit && dayShifts.length === 0 && (
-                        <button
-                          onClick={() => openNew(employee.id, day)}
-                          className="flex h-10 w-full items-center justify-center rounded border border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-colors"
-                        >
-                          <Plus className="h-3.5 w-3.5" />
-                        </button>
-                      )}
-                      {canEdit && dayShifts.length > 0 && (
-                        <button
-                          onClick={() => openNew(employee.id, day)}
-                          className="flex h-5 w-full items-center justify-center rounded text-muted-foreground opacity-0 hover:opacity-100 hover:text-primary transition-opacity"
-                        >
-                          <Plus className="h-3 w-3" />
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+          </tbody>
+        </table>
+      </div>
 
       <ShiftDialog
         open={dialogOpen}
@@ -230,6 +332,6 @@ export function WeeklyGrid({
         onSave={handleSave}
         onDelete={handleDelete}
       />
-    </div>
+    </>
   );
 }

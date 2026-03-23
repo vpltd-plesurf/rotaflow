@@ -178,31 +178,33 @@ export function LocationsPageClient({ locations: initialLocations }: { locations
                       {d.closed ? (
                         <span className="flex-1 text-sm text-muted-foreground">Closed</span>
                       ) : (
-                        <div className="flex flex-1 items-center gap-1.5">
+                        <div className="flex flex-1 flex-wrap items-center gap-1.5">
                           <Input
                             type="time"
                             value={d.open}
                             onChange={(e) => setDay(day, "open", e.target.value)}
-                            className="h-7 w-24 px-2 text-sm"
+                            className="h-7 w-[5.5rem] px-2 text-sm"
                           />
                           <span className="text-xs text-muted-foreground">–</span>
                           <Input
                             type="time"
                             value={d.close}
                             onChange={(e) => setDay(day, "close", e.target.value)}
-                            className="h-7 w-24 px-2 text-sm"
+                            className="h-7 w-[5.5rem] px-2 text-sm"
                           />
-                          <Input
-                            type="number"
-                            min={0}
-                            max={180}
-                            step={5}
-                            value={d.lunch_mins}
-                            onChange={(e) => setDay(day, "lunch_mins", Number(e.target.value))}
-                            className="h-7 w-14 px-2 text-sm text-center"
-                            title="Lunch break (minutes)"
-                          />
-                          <span className="text-xs text-muted-foreground shrink-0">min</span>
+                          <div className="flex items-center gap-1">
+                            <Input
+                              type="number"
+                              min={0}
+                              max={180}
+                              step={5}
+                              value={d.lunch_mins}
+                              onChange={(e) => setDay(day, "lunch_mins", Number(e.target.value))}
+                              className="h-7 w-14 px-2 text-sm text-center"
+                              title="Lunch break (minutes)"
+                            />
+                            <span className="text-xs text-muted-foreground shrink-0">min</span>
+                          </div>
                         </div>
                       )}
                       <button

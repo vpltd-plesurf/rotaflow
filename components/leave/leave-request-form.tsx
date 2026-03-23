@@ -69,7 +69,7 @@ export function LeaveRequestForm({ employeeId, onSuccess, onCancel }: LeaveReque
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-1">
           <Label>First day off</Label>
           <Input type="date" {...register("startDate")} />

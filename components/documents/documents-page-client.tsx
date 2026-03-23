@@ -140,7 +140,7 @@ export function DocumentsPageClient({ profile, documents: initialDocs, employees
               <div className="space-y-1">
                 <label className="text-sm font-medium">Barber</label>
                 <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
-                  <SelectTrigger className="w-44">
+                  <SelectTrigger className="w-full sm:w-44">
                     <SelectValue placeholder="Select barber" />
                   </SelectTrigger>
                   <SelectContent>
@@ -155,7 +155,7 @@ export function DocumentsPageClient({ profile, documents: initialDocs, employees
             <div className="space-y-1">
               <label className="text-sm font-medium">Type</label>
               <Select value={selectedDocType} onValueChange={(v) => setSelectedDocType(v as DocType)}>
-                <SelectTrigger className="w-36">
+                <SelectTrigger className="w-full sm:w-36">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

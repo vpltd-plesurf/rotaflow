@@ -197,7 +197,7 @@ export function RotaView({
           <Button variant="outline" size="icon" onClick={() => navigateWeek("prev")}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <div className="min-w-[180px] text-center">
+          <div className="min-w-fit text-center">
             <p className="text-sm font-medium">
               {format(weekDate, "d MMM")} – {format(addWeeks(weekDate, 1), "d MMM yyyy")}
             </p>
@@ -210,7 +210,7 @@ export function RotaView({
         {/* Location switcher (admin only) */}
         {profile.role === "admin" && (
           <Select value={locationId ?? ""} onValueChange={switchLocation}>
-            <SelectTrigger className="w-44">
+            <SelectTrigger className="w-full sm:w-44">
               <SelectValue placeholder="Select location" />
             </SelectTrigger>
             <SelectContent>

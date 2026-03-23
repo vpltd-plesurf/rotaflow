@@ -78,7 +78,7 @@ export function NotificationBell({ profileId }: NotificationBellProps) {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-80 p-0">
+      <PopoverContent align="end" className="w-[calc(100vw-2rem)] sm:w-80 max-w-[320px] p-0">
         <div className="flex items-center justify-between border-b px-4 py-3">
           <h3 className="font-semibold text-sm">Notifications</h3>
           {unreadCount > 0 && (

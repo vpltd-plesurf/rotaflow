@@ -326,3 +326,9 @@ export type LeaveRequestWithEmployee = LeaveRequest & {
   employee: Profile;
   reviewer: Profile | null;
 };
+
+export type LeaveRange = {
+  employee_id: string;
+  start_date: string;
+  end_date: string;
+};

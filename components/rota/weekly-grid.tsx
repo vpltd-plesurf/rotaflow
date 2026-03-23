@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo, useRef } from "react";
 import { format } from "date-fns";
 import { Plus, ChevronLeft, ChevronRight, GripVertical } from "lucide-react";
 import {
@@ -20,9 +20,7 @@ import { ShiftCard } from "@/components/rota/shift-card";
 import { ShiftDialog } from "@/components/rota/shift-dialog";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import type { ProfileWithLocation, ShiftWithEmployee, WeeklyHours } from "@/lib/supabase/types";
-
-type LeaveRange = { employee_id: string; start_date: string; end_date: string };
+import type { ProfileWithLocation, ShiftWithEmployee, WeeklyHours, LeaveRange } from "@/lib/supabase/types";
 
 interface WeeklyGridProps {
   employees: ProfileWithLocation[];
@@ -116,48 +114,63 @@ export function WeeklyGrid({
   ensureRota,
   leaveRequests,
 }: WeeklyGridProps) {
-  const supabase = createClient();
+  const supabaseRef = useRef(createClient());
+  const supabase = supabaseRef.current;
   const weekDays = getWeekDays(fromDbDate(weekStart));
+  const todayStr = format(new Date(), "yyyy-MM-dd");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingShift, setEditingShift] = useState<ShiftWithEmployee | null>(null);
   const [newShiftContext, setNewShiftContext] = useState<{ employeeId: string; date: string } | null>(null);
   const [activeShift, setActiveShift] = useState<ShiftWithEmployee | null>(null);
   const [mobileDayIdx, setMobileDayIdx] = useState(() => {
-    const today = format(new Date(), "yyyy-MM-dd");
-    const idx = weekDays.findIndex((d) => format(d, "yyyy-MM-dd") === today);
+    const idx = weekDays.findIndex((d) => format(d, "yyyy-MM-dd") === todayStr);
     return idx >= 0 ? idx : 0;
   });
 
-  // Check if an employee is on approved leave for a given date
-  function isOnLeave(employeeId: string, dateStr: string): boolean {
-    if (!leaveRequests?.length) return false;
-    return leaveRequests.some(
-      (lr) => lr.employee_id === employeeId && lr.start_date <= dateStr && lr.end_date >= dateStr
-    );
-  }
+  // Pre-compute shift lookup map: "employeeId:date" -> shifts
+  const shiftMap = useMemo(() => {
+    const map = new Map<string, ShiftWithEmployee[]>();
+    for (const s of shifts) {
+      const key = `${s.employee_id}:${s.date}`;
+      const arr = map.get(key);
+      if (arr) arr.push(s);
+      else map.set(key, [s]);
+    }
+    return map;
+  }, [shifts]);
 
-  // Count how many employees are on leave for a given date
-  function leaveCountForDate(dateStr: string): number {
-    if (!leaveRequests?.length) return 0;
-    const ids = new Set<string>();
+  // Pre-compute leave lookup: Set of "employeeId:date" and date -> count
+  const { leaveSet, leaveCounts } = useMemo(() => {
+    const set = new Set<string>();
+    const counts = new Map<string, number>();
+    if (!leaveRequests?.length) return { leaveSet: set, leaveCounts: counts };
+
     for (const lr of leaveRequests) {
-      if (lr.start_date <= dateStr && lr.end_date >= dateStr) {
-        ids.add(lr.employee_id);
+      for (const day of weekDays) {
+        const dateStr = format(day, "yyyy-MM-dd");
+        if (lr.start_date <= dateStr && lr.end_date >= dateStr) {
+          set.add(`${lr.employee_id}:${dateStr}`);
+          counts.set(dateStr, (counts.get(dateStr) ?? 0) + 1);
+        }
       }
     }
-    return ids.size;
-  }
+    return { leaveSet: set, leaveCounts: counts };
+  }, [leaveRequests, weekDays]);
 
-  // Require 8px drag before activating (prevents accidental drags on click)
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   );
 
   function getShiftsFor(employeeId: string, date: Date): ShiftWithEmployee[] {
-    const dateStr = format(date, "yyyy-MM-dd");
-    return shifts.filter(
-      (s) => s.employee_id === employeeId && s.date === dateStr
-    );
+    return shiftMap.get(`${employeeId}:${format(date, "yyyy-MM-dd")}`) ?? [];
+  }
+
+  function isOnLeave(employeeId: string, dateStr: string): boolean {
+    return leaveSet.has(`${employeeId}:${dateStr}`);
+  }
+
+  function leaveCountForDate(dateStr: string): number {
+    return leaveCounts.get(dateStr) ?? 0;
   }
 
   function openNew(employeeId: string, date: Date) {
@@ -289,7 +302,7 @@ export function WeeklyGrid({
         toast({ variant: "destructive", title: "Error moving shift", description: String(e) });
       }
     },
-    [shifts, employees, supabase, onShiftsChange]
+    [shifts, employees, onShiftsChange]
   );
 
   // For barber: only show their own row
@@ -317,7 +330,7 @@ export function WeeklyGrid({
 
           <div className="flex flex-1 gap-1 overflow-x-auto">
             {weekDays.map((day, idx) => {
-              const isToday = format(day, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
+              const isToday = format(day, "yyyy-MM-dd") === todayStr;
               return (
                 <button
                   key={day.toISOString()}
@@ -429,7 +442,7 @@ export function WeeklyGrid({
                     key={day.toISOString()}
                     className={cn(
                       "border-r px-2 py-2 text-center font-medium last:border-r-0",
-                      format(day, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd")
+                      format(day, "yyyy-MM-dd") === todayStr
                         ? "bg-primary/5 text-primary"
                         : "text-muted-foreground"
                     )}

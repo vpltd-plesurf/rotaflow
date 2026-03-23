@@ -21,8 +21,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { toDbDate } from "@/lib/utils";
 import type { ShiftWithEmployee } from "@/lib/supabase/types";
-import { format, getDay, parseISO } from "date-fns";
+import { getDay, parseISO } from "date-fns";
 
 type Template = {
   id: string;
@@ -155,7 +156,7 @@ export function TemplateMenu({
         return {
           rota_id: rotaId,
           employee_id: ts.employee_id,
-          date: format(targetDate, "yyyy-MM-dd"),
+          date: toDbDate(targetDate),
           start_time: ts.start_time,
           end_time: ts.end_time,
           role_label: ts.role_label || null,

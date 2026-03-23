@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { format, addWeeks, subWeeks } from "date-fns";
 import { ChevronLeft, ChevronRight, Copy, Send } from "lucide-react";
@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { WeeklyGrid } from "@/components/rota/weekly-grid";
 import { TemplateMenu } from "@/components/rota/template-menu";
-import { getWeekStart, toDbDate, formatCurrency } from "@/lib/utils";
+import { getWeekStart, toDbDate, formatCurrency, shiftHours } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import type {
@@ -24,9 +24,8 @@ import type {
   Rota,
   ShiftWithEmployee,
   WeeklyHours,
+  LeaveRange,
 } from "@/lib/supabase/types";
-
-type LeaveRange = { employee_id: string; start_date: string; end_date: string };
 
 interface RotaViewProps {
   profile: ProfileWithLocation;
@@ -184,15 +183,13 @@ export function RotaView({
     }
   }
 
-  // Calculate indicative cost
-  const totalCost = shifts.reduce((sum, s) => {
-    if (s.status !== "scheduled") return sum;
-    const rate = s.employee?.hourly_rate ?? 0;
-    const [sh, sm] = s.start_time.split(":").map(Number);
-    const [eh, em] = s.end_time.split(":").map(Number);
-    const hours = ((eh * 60 + em) - (sh * 60 + sm)) / 60;
-    return sum + hours * rate;
-  }, 0);
+  const totalCost = useMemo(() =>
+    shifts.reduce((sum, s) => {
+      if (s.status !== "scheduled") return sum;
+      return sum + shiftHours(s.start_time, s.end_time) * (s.employee?.hourly_rate ?? 0);
+    }, 0),
+    [shifts]
+  );
 
   return (
     <div className="space-y-4">

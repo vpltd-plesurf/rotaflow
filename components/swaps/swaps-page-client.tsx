@@ -58,6 +58,14 @@ export function SwapsPageClient({ profile, swaps: initialSwaps, myShifts, collea
   const pending = swaps.filter((s) => s.status === "pending");
   const history = swaps.filter((s) => s.status !== "pending");
 
+  function notifySwap(type: string, swapId: string) {
+    fetch("/api/swaps/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type, swapId }),
+    }).catch(() => {});
+  }
+
   async function handleApprove(swap: SwapWithDetails) {
     setProcessing(swap.id);
     try {
@@ -90,16 +98,7 @@ export function SwapsPageClient({ profile, swaps: initialSwaps, myShifts, collea
           .eq("id", swap.shift_id);
       }
 
-      // Notify requester
-      try {
-        await fetch("/api/swaps/notify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ type: "approved", swapId: swap.id }),
-        });
-      } catch {
-        // Non-critical
-      }
+      notifySwap("approved", swap.id);
 
       setSwaps((prev) =>
         prev.map((s) => s.id === swap.id ? { ...s, status: "approved" as const } : s)
@@ -124,16 +123,7 @@ export function SwapsPageClient({ profile, swaps: initialSwaps, myShifts, collea
         })
         .eq("id", id);
 
-      // Notify requester
-      try {
-        await fetch("/api/swaps/notify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ type: "denied", swapId: id }),
-        });
-      } catch {
-        // Non-critical
-      }
+      notifySwap("denied", id);
 
       setSwaps((prev) =>
         prev.map((s) => s.id === id ? { ...s, status: "denied" as const } : s)

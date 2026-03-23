@@ -2,6 +2,7 @@
 
 import { format, parseISO, isToday, isTomorrow } from "date-fns";
 import { Clock, MapPin, CalendarDays, CalendarOff } from "lucide-react";
+import { shiftHours } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import type { ProfileWithLocation } from "@/lib/supabase/types";
@@ -43,11 +44,7 @@ function friendlyDate(dateStr: string): string {
 function ShiftRow({ shift, past }: { shift: ShiftWithRota; past?: boolean }) {
   const status = statusStyles[shift.status] ?? statusStyles.scheduled;
   const locationName = shift.rota?.location?.name;
-  const hours = (() => {
-    const [sh, sm] = shift.start_time.split(":").map(Number);
-    const [eh, em] = shift.end_time.split(":").map(Number);
-    return ((eh * 60 + em) - (sh * 60 + sm)) / 60;
-  })();
+  const hours = shiftHours(shift.start_time, shift.end_time);
 
   return (
     <Card className={past ? "opacity-60" : ""}>
@@ -90,11 +87,7 @@ export function MyShiftsClient({ profile, upcomingShifts, pastShifts }: MyShifts
   const scheduledCount = upcomingShifts.filter((s) => s.status === "scheduled").length;
   const totalHours = upcomingShifts
     .filter((s) => s.status === "scheduled")
-    .reduce((sum, s) => {
-      const [sh, sm] = s.start_time.split(":").map(Number);
-      const [eh, em] = s.end_time.split(":").map(Number);
-      return sum + ((eh * 60 + em) - (sh * 60 + sm)) / 60;
-    }, 0);
+    .reduce((sum, s) => sum + shiftHours(s.start_time, s.end_time), 0);
 
   return (
     <div className="space-y-6">

@@ -36,6 +36,13 @@ export function shiftHours(startTime: string, endTime: string): number {
   return (endMins - startMins) / 60;
 }
 
+/** Format a leave date range as "d MMM yyyy" or "d MMM yyyy – d MMM yyyy" */
+export function formatDateRange(startDate: string, endDate: string): string {
+  const start = format(parseISO(startDate), "d MMM yyyy");
+  if (startDate === endDate) return start;
+  return `${start} – ${format(parseISO(endDate), "d MMM yyyy")}`;
+}
+
 /** Format currency */
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat("en-GB", {

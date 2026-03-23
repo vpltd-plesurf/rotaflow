@@ -76,16 +76,16 @@ export default async function RotaPage({
   // Fetch approved leave overlapping this week for the location's employees
   const weekEndStr = format(addDays(weekStart, 6), "yyyy-MM-dd");
   let leaveRequests: { employee_id: string; start_date: string; end_date: string }[] = [];
-  if (locationId) {
+  const employeeIds = (employees ?? []).map((e) => e.id);
+  if (locationId && employeeIds.length > 0) {
     const { data } = await supabase
       .from("leave_requests")
       .select("employee_id, start_date, end_date")
       .eq("status", "approved")
+      .in("employee_id", employeeIds)
       .lte("start_date", weekEndStr)
       .gte("end_date", weekStartStr);
-    // Filter to employees at this location
-    const employeeIds = new Set((employees ?? []).map((e) => e.id));
-    leaveRequests = (data ?? []).filter((lr) => employeeIds.has(lr.employee_id));
+    leaveRequests = data ?? [];
   }
 
   return (

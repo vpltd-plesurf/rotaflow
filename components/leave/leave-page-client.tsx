@@ -32,6 +32,14 @@ export function LeavePageClient({ profile, requests: initialRequests }: LeavePag
 
   const canManage = profile.role === "admin" || profile.role === "manager";
 
+  function notifyLeaveEmployee(leaveRequestId: string, status: string) {
+    fetch("/api/leave/notify-employee", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ leaveRequestId, status }),
+    }).catch(() => {});
+  }
+
   async function handleApprove(id: string) {
     setProcessing(id);
     try {
@@ -52,16 +60,7 @@ export function LeavePageClient({ profile, requests: initialRequests }: LeavePag
         body: JSON.stringify({ leaveRequestId: id }),
       });
 
-      // Notify the employee
-      try {
-        await fetch("/api/leave/notify-employee", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ leaveRequestId: id, status: "approved" }),
-        });
-      } catch {
-        // Non-critical
-      }
+      notifyLeaveEmployee(id, "approved");
 
       setRequests((prev) =>
         prev.map((r) => r.id === id ? { ...r, status: "approved" as const } : r)
@@ -87,16 +86,7 @@ export function LeavePageClient({ profile, requests: initialRequests }: LeavePag
         .eq("id", id);
       if (error) throw error;
 
-      // Notify the employee
-      try {
-        await fetch("/api/leave/notify-employee", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ leaveRequestId: id, status: "denied" }),
-        });
-      } catch {
-        // Non-critical
-      }
+      notifyLeaveEmployee(id, "denied");
 
       setRequests((prev) =>
         prev.map((r) => r.id === id ? { ...r, status: "denied" as const } : r)

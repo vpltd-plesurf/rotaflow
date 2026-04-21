@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { format } from "date-fns";
+import { EMAIL_FROM } from "@/lib/email";
 
 export async function POST(request: Request) {
   const resend = new Resend(process.env.RESEND_API_KEY);
@@ -45,7 +46,7 @@ export async function POST(request: Request) {
 
     try {
       await resend.emails.send({
-        from: "RotaFlow <no-reply@rotaflow.app>",
+        from: EMAIL_FROM,
         to: email,
         subject: `Your rota for the week of ${weekFormatted} — ${locationName}`,
         html: `

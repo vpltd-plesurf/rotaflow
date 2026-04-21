@@ -41,7 +41,7 @@ if (!ACCESS_TOKEN) {
   console.error(
     "\n❌  SUPABASE_ACCESS_TOKEN is not set.\n" +
     "    1. Go to: https://supabase.com/dashboard/account/tokens\n" +
-    "    2. Click 'Generate new token', give it a name (e.g. RotaFlow dev)\n" +
+    "    2. Click 'Generate new token', give it a name (e.g. ROKRota dev)\n" +
     "    3. Copy the token (starts with sbp_...)\n" +
     "    4. Add to .env.local:  SUPABASE_ACCESS_TOKEN=sbp_...\n"
   );

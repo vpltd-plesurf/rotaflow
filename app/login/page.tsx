@@ -6,10 +6,11 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center gap-2 mb-8">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground font-bold text-lg shadow-md">
-            RF
+            RR
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">RotaFlow</h1>
-          <p className="text-sm text-muted-foreground">Sign in to your account</p>
+          <h1 className="text-2xl font-bold tracking-tight">ROKRota</h1>
+          <p className="text-xs text-muted-foreground uppercase tracking-wider">Made for barbers, built by barbers</p>
+          <p className="text-sm text-muted-foreground mt-1">Sign in to your account</p>
         </div>
         <div className="rounded-2xl border bg-card shadow-lg p-6">
           <LoginForm />

@@ -97,9 +97,9 @@ function SidebarContent({
       {/* Logo */}
       <div className="flex h-14 items-center border-b px-4 gap-2.5">
         <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-sm">
-          RF
+          RR
         </div>
-        <span className="font-semibold text-sm tracking-tight">RotaFlow</span>
+        <span className="font-semibold text-sm tracking-tight">ROKRota</span>
       </div>
 
       {/* Location label */}

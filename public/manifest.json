@@ -1,7 +1,7 @@
 {
-  "name": "RotaFlow",
-  "short_name": "RotaFlow",
-  "description": "Rota management for ROK Barbers",
+  "name": "ROKRota",
+  "short_name": "ROKRota",
+  "description": "Made for barbers, built by barbers — rota management for your shop",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#f5faf7",

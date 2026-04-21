@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, 'feature/**']
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Brand check (no "RotaFlow" in user-facing surfaces)
+        run: bash scripts/check-brand.sh
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci --force
+
+      - name: TypeScript typecheck
+        run: npx tsc --noEmit

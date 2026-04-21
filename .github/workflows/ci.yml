@@ -24,3 +24,16 @@ jobs:
 
       - name: TypeScript typecheck
         run: npx tsc --noEmit
+
+      # Isolation tests hit the real Supabase project, seed two throwaway
+      # orgs (namespaced with a timestamp nonce) using the service role,
+      # assert RLS, then clean up. Requires these repo secrets to be set:
+      #   NEXT_PUBLIC_SUPABASE_URL
+      #   NEXT_PUBLIC_SUPABASE_ANON_KEY
+      #   SUPABASE_SERVICE_ROLE_KEY
+      - name: RLS isolation tests
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: npm test

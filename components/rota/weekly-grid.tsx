@@ -28,6 +28,7 @@ interface WeeklyGridProps {
   weekStart: string;
   rotaId: string | null;
   locationId: string;
+  orgId: string;
   canEdit: boolean;
   currentUserId: string;
   isBarber: boolean;
@@ -106,6 +107,7 @@ export function WeeklyGrid({
   weekStart,
   rotaId,
   locationId,
+  orgId,
   canEdit,
   currentUserId,
   isBarber,
@@ -227,6 +229,7 @@ export function WeeklyGrid({
             role_label: data.roleLabel || null,
             notes: data.notes || null,
             status: "scheduled",
+            org_id: orgId,
           })
           .select("*, employee:profiles(*)")
           .single();

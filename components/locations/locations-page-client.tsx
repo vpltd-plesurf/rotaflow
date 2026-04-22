@@ -45,7 +45,13 @@ function openDays(wh: WeeklyHours): string {
   return open.map((d) => DAY_LABELS[d]).join(", ");
 }
 
-export function LocationsPageClient({ locations: initialLocations }: { locations: LocationWithCount[] }) {
+export function LocationsPageClient({
+  locations: initialLocations,
+  orgId,
+}: {
+  locations: LocationWithCount[];
+  orgId: string;
+}) {
   const supabase = createClient();
   const [locations, setLocations] = useState(initialLocations);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -92,7 +98,11 @@ export function LocationsPageClient({ locations: initialLocations }: { locations
         setLocations((prev) => prev.map((l) => l.id === editing.id ? { ...l, ...payload } : l));
         toast({ title: "Location updated" });
       } else {
-        const { data, error } = await supabase.from("locations").insert(payload).select().single();
+        const { data, error } = await supabase
+          .from("locations")
+          .insert({ ...payload, org_id: orgId })
+          .select()
+          .single();
         if (error) throw error;
         setLocations((prev) => [...prev, { ...data, barberCount: 0 }]);
         toast({ title: "Location added" });

@@ -77,6 +77,8 @@ export interface Database {
           role: UserRole;
           location_id: string | null;
           hourly_rate: number | null;
+          org_id: string;
+          is_superuser: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -87,6 +89,8 @@ export interface Database {
           role: UserRole;
           location_id?: string | null;
           hourly_rate?: number | null;
+          org_id: string;
+          is_superuser?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -97,6 +101,8 @@ export interface Database {
           role?: UserRole;
           location_id?: string | null;
           hourly_rate?: number | null;
+          org_id?: string;
+          is_superuser?: boolean;
           updated_at?: string;
         };
       };

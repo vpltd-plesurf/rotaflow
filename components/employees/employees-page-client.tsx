@@ -172,6 +172,7 @@ export function EmployeesPageClient({
         employee={editing}
         locations={locations}
         currentUserRole={profile.role}
+        orgId={profile.org_id}
         onSaved={onSaved}
       />
 

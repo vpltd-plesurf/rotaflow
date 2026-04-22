@@ -72,6 +72,7 @@ export async function POST(request: Request) {
         type: "leave_request",
         message: `${employee.full_name} has requested leave for ${startFormatted}${endFormatted}.`,
         link: "/dashboard/leave",
+        org_id: leave.org_id,
       });
     } catch {
       // Don't fail the whole request

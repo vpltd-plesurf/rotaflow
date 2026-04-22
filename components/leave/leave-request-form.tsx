@@ -25,11 +25,12 @@ type FormValues = z.infer<typeof schema>;
 
 interface LeaveRequestFormProps {
   employeeId: string;
+  orgId: string;
   onSuccess: (request: LeaveRequestWithEmployee) => void;
   onCancel: () => void;
 }
 
-export function LeaveRequestForm({ employeeId, onSuccess, onCancel }: LeaveRequestFormProps) {
+export function LeaveRequestForm({ employeeId, orgId, onSuccess, onCancel }: LeaveRequestFormProps) {
   const supabase = createClient();
 
   const {
@@ -47,6 +48,7 @@ export function LeaveRequestForm({ employeeId, onSuccess, onCancel }: LeaveReque
         end_date: values.endDate,
         reason: values.reason || null,
         status: "pending",
+        org_id: orgId,
       })
       .select(`
         *,

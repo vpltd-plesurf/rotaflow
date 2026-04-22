@@ -85,6 +85,7 @@ export function DocumentsPageClient({ profile, documents: initialDocs, employees
           file_size: file.size,
           doc_type: selectedDocType,
           uploaded_by: profile.id,
+          org_id: profile.org_id,
         })
         .select("*, employee:profiles!documents_employee_id_fkey(id, full_name)")
         .single();

@@ -129,6 +129,7 @@ export function LeavePageClient({ profile, requests: initialRequests }: LeavePag
           <CardContent>
             <LeaveRequestForm
               employeeId={profile.id}
+              orgId={profile.org_id}
               onSuccess={onRequestCreated}
               onCancel={() => setShowForm(false)}
             />

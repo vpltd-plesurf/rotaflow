@@ -87,6 +87,7 @@ export function RotaView({
         week_start: weekStart,
         published: false,
         created_by: profile.id,
+        org_id: profile.org_id,
       })
       .select()
       .single();
@@ -168,6 +169,7 @@ export function RotaView({
           role_label: s.role_label,
           notes: s.notes,
           status: "scheduled" as const,
+          org_id: profile.org_id,
         };
       });
 
@@ -243,6 +245,7 @@ export function RotaView({
             {profile.role === "admin" && (
               <TemplateMenu
                 locationId={locationId}
+                orgId={profile.org_id}
                 shifts={shifts}
                 weekStart={weekStart}
                 ensureRota={ensureRota}
@@ -277,6 +280,7 @@ export function RotaView({
           weekStart={weekStart}
           rotaId={rota?.id ?? null}
           locationId={locationId}
+          orgId={profile.org_id}
           canEdit={canEdit}
           currentUserId={profile.id}
           isBarber={profile.role === "barber"}

@@ -27,6 +27,21 @@ export type ShiftStatus = "scheduled" | "leave_block" | "swap_pending" | "cancel
 export type LeaveStatus = "pending" | "approved" | "denied";
 export type SwapStatus = "pending" | "approved" | "denied";
 export type DocType = "contract" | "insurance" | "id" | "other";
+export type OrgStatus = "active" | "suspended" | "trial";
+
+export type Organisation = {
+  id: string;
+  slug: string;
+  name: string;
+  status: OrgStatus;
+};
+
+export type OrgContext = {
+  userId: string;
+  role: UserRole;
+  isSuperuser: boolean;
+  org: Organisation;
+};
 
 export interface Database {
   public: {
@@ -62,6 +77,8 @@ export interface Database {
           role: UserRole;
           location_id: string | null;
           hourly_rate: number | null;
+          org_id: string;
+          is_superuser: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -72,6 +89,8 @@ export interface Database {
           role: UserRole;
           location_id?: string | null;
           hourly_rate?: number | null;
+          org_id: string;
+          is_superuser?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -82,6 +101,8 @@ export interface Database {
           role?: UserRole;
           location_id?: string | null;
           hourly_rate?: number | null;
+          org_id?: string;
+          is_superuser?: boolean;
           updated_at?: string;
         };
       };

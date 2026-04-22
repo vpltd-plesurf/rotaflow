@@ -60,6 +60,7 @@ interface EmployeeDialogProps {
   employee: EmployeeWithDetail | null;
   locations: Location[];
   currentUserRole: UserRole;
+  orgId: string;
   onSaved: (employee: never) => void;
 }
 
@@ -69,6 +70,7 @@ export function EmployeeDialog({
   employee,
   locations,
   currentUserRole,
+  orgId,
   onSaved,
 }: EmployeeDialogProps) {
   const supabase = createClient();
@@ -149,35 +151,32 @@ export function EmployeeDialog({
         onSaved(updated as never);
       } else {
         // Create new auth user + profile
+        // The handle_new_user() trigger auto-inserts a profile with org_id
+        // from user_metadata (we pass it explicitly here). We then .update the
+        // profile with the remaining fields, and .update employee_details
+        // (also auto-created by handle_new_barber_profile trigger).
         const { data: authData, error: authError } = await supabase.auth.admin.createUser({
           email: values.email,
           password: Math.random().toString(36).slice(2) + "X1!", // temp password
           email_confirm: true,
-          user_metadata: { full_name: values.fullName },
+          user_metadata: { full_name: values.fullName, org_id: orgId },
         });
         if (authError) throw authError;
 
         const userId = authData.user.id;
 
-        // Create profile
-        const { error: profileError } = await supabase.from("profiles").insert({
-          id: userId,
-          full_name: values.fullName,
+        const { error: profileError } = await supabase.from("profiles").update({
           phone: values.phone || null,
-          role: "barber",
           location_id: values.locationId,
           hourly_rate: values.hourlyRate ? parseFloat(values.hourlyRate) : null,
-        });
+        }).eq("id", userId);
         if (profileError) throw profileError;
 
-        // Create employee details
-        const { error: detailError } = await supabase.from("employee_details").insert({
-          id: userId,
+        const { error: detailError } = await supabase.from("employee_details").update({
           emergency_contact_name: values.emergencyContactName || null,
           emergency_contact_phone: values.emergencyContactPhone || null,
           notes: values.notes || null,
-          status: "active",
-        });
+        }).eq("id", userId);
         if (detailError) throw detailError;
 
         toast({ title: "Barber added", description: "They can log in with their email." });

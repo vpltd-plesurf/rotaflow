@@ -20,6 +20,7 @@ type Colleague = { id: string; full_name: string };
 
 interface SwapProposalFormProps {
   requesterId: string;
+  orgId: string;
   myShifts: ShiftOption[];
   colleagues: Colleague[];
   onSuccess: () => void;
@@ -28,6 +29,7 @@ interface SwapProposalFormProps {
 
 export function SwapProposalForm({
   requesterId,
+  orgId,
   myShifts,
   colleagues,
   onSuccess,
@@ -54,6 +56,7 @@ export function SwapProposalForm({
         target_id: targetId === "anyone" ? null : targetId,
         message: message.trim() || null,
         status: "pending",
+        org_id: orgId,
       });
       if (error) throw error;
 

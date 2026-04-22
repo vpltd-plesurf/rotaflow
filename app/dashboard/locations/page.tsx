@@ -9,7 +9,7 @@ export default async function LocationsPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, org_id")
     .eq("id", user.id)
     .single();
   if (!profile || profile.role !== "admin") redirect("/dashboard");
@@ -33,6 +33,7 @@ export default async function LocationsPage() {
   return (
     <LocationsPageClient
       locations={(locations ?? []).map((l) => ({ ...l, barberCount: countMap[l.id] ?? 0 }))}
+      orgId={profile.org_id}
     />
   );
 }

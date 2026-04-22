@@ -7,13 +7,13 @@ import { Toaster } from "@/components/ui/toaster";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "RotaFlow",
-  description: "Rota management for your barbershop team",
+  title: "ROKRota",
+  description: "Made for barbers, built by barbers — rota management for your shop",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "RotaFlow",
+    title: "ROKRota",
   },
   other: {
     "mobile-web-app-capable": "yes",

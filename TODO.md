@@ -1,80 +1,109 @@
-# RotaFlow — TODO
+# ROKRota — TODO
 
-## Done
-
-### Infrastructure
-- [x] Next.js 16 app scaffold (App Router, Turbopack, TypeScript)
-- [x] Supabase cloud project connected (gyennfqrhcllyzahiddp)
-- [x] shadcn/ui + Tailwind CSS
-- [x] Database schema + RLS policies
-- [x] Migration runner (`npm run migrate`) via Supabase Management API
-- [x] CSV import from RotaCloud exports (16 employees, 182 leave records)
-- [x] Role-based access: Admin / Manager / Barber
-
-### Pages & Features
-- [x] Login (Supabase email/password)
-- [x] Dashboard home (role-aware quick links)
-- [x] **Rota** — weekly grid per location, add/edit/delete shifts
-- [x] **Rota** — shift quick-select: Full day / AM / PM (uses per-day shop hours)
-- [x] **Rota** — copy previous week
-- [x] **Rota** — publish + email notification to barbers (Resend)
-- [x] **Rota** — indicative labour cost (rate × hours)
-- [x] **Rota** — admin location switcher
-- [x] **Team** — employee cards with leave days + doc count
-- [x] **Team** — click-through drawer: Info / Leave / Documents tabs
-- [x] **Team** — add/edit barber profiles
-- [x] **Team** — activate / deactivate barbers
-- [x] **Leave** — barbers submit unpaid leave requests
-- [x] **Leave** — manager approve / deny
-- [x] **Documents** — upload files per employee (Supabase Storage, 10MB)
-- [x] **Documents** — download via signed URL
-- [x] **Locations** — CRUD with per-day opening hours (Mon–Sun toggle, open/close, lunch mins)
-- [x] **Settings** — profile edit + password change
-- [x] **Swaps** — page scaffolded
+Last updated: 2026-04-22 (end of Phase 3 — DB-layer multi-tenancy complete).
 
 ---
 
-## Not Done / Needs Work
+## Multi-tenant SaaS conversion (in progress)
 
-### Shift Swaps
-- [ ] Swap proposal form (barber picks a shift and requests cover or direct swap)
-- [ ] Manager approve/deny swap → rota updates automatically
-- [ ] Notification to both barbers when swap is approved
+Working branch: `feature/multi-tenant` (PR #1). Plan detailed in project memory.
 
-### Leave
-- [ ] Leave requests should auto-block the shift on the rota when approved (create a `leave_block` shift)
-- [ ] Filterable leave history view (by location, barber, date range)
-- [ ] Manager leave approval should trigger email to barber
+- [x] **Phase 0** — Safety net: `scripts/check-brand.sh`, `scripts/clone-to-staging.ts`, `scripts/smoke-test.ts`, CI with brand check + typecheck
+- [x] **Phase 0.5** — Product rename to `ROKRota` across user-facing surfaces (login, sidebar, manifest, icons, emails, docs). Infra identifiers (docker paths, container names) deliberately untouched
+- [x] **Phase 1** — `organisations` table + `org_id NOT NULL` on all 11 user-data tables + ROK backfilled + `profiles.is_superuser` flag (Paul promoted). Triggers carry `org_id` through
+- [x] **Phase 2** — `lib/supabase/org.ts` → `getCurrentOrg()` helper + `OrgContext` type
+- [x] **Phase 3** — RLS rewrite. Every policy gates on `org_id = my_org_id()` + superuser bypass via `am_superuser()`. 39-case vitest isolation suite asserts cross-org impossible. CI wired
+- [ ] **Phase 4** — App query audit: thread `getCurrentOrg()` through pages, ensure every INSERT sets `org_id`, verify location/employee selectors scoped to org
+- [ ] **Phase 5** — Public `/signup` page + onboarding wizard + subdomain routing (`*.rokrota.com`). Blocked on purchasing `rokrota.com`
+- [ ] **Phase 6** — Invite flow: replace admin-sets-password UX with Supabase `inviteUserByEmail` + magic link
+- [ ] **Phase 7** — De-ROK-ify remaining customer-specific strings; per-org branding (name, email sender, logo)
+- [ ] **Phase 8** — Cross-tenant isolation audit + `/security-review` skill + audit log
+- [ ] **Phase 9** — Super-admin panel (list orgs, impersonate, suspend)
+- [ ] **Phase 10** — Stripe (per-seat plans, webhooks, billing portal)
 
-### Notifications
-- [ ] In-app notification bell (table exists, UI not wired up)
-- [ ] Email on leave approved/denied
-- [ ] Email on shift swap approved/denied
+### Immediate user actions (unblocks tomorrow's work)
+
+- [ ] Add 3 GitHub repo secrets so CI can run the isolation tests:
+  - `NEXT_PUBLIC_SUPABASE_URL`
+  - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+  - `SUPABASE_SERVICE_ROLE_KEY`
+- [ ] Buy `rokrota.com` via Cloudflare Registrar (blocks Phase 5, not earlier)
+
+---
+
+## Core app — built
+
+### Auth, roles, data
+- [x] Login (Supabase email/password)
+- [x] Role-based access: admin / manager / barber
+- [x] Row-level security (org-scoped since Phase 3)
+- [x] CSV import from RotaCloud exports (16 employees, 182 leave records)
+- [x] Super-admin flag for cross-tenant support access
 
 ### Rota
-- [ ] Drag-and-drop to move shifts between days/barbers
-- [ ] Rota templates (save a week as a named template, apply to future weeks)
-- [ ] Unpublish a rota (currently publish is one-way)
-- [ ] Barber view — barber sees only their own shifts (currently hidden in grid; consider a dedicated "My Shifts" view)
+- [x] Weekly grid per location
+- [x] Add / edit / delete shifts; Full day / AM / PM quick-select
+- [x] Copy previous week
+- [x] Publish with email to barbers (Resend)
+- [x] Indicative labour cost (rate × hours)
+- [x] Admin location switcher
+- [x] Drag-and-drop shifts between days/barbers (desktop, @dnd-kit/core)
+- [x] Rota templates — save + apply named patterns
+- [x] Leave calendar overlay (amber cells, "On leave" badges, "{n} off" day counts)
+- [x] Mobile card view (single-day picker below md breakpoint)
+
+### Team
+- [x] Employee cards with leave days + doc count
+- [x] Click-through drawer: Info / Leave / Documents tabs
+- [x] Add / edit barber profiles
+- [x] Activate / deactivate barbers
+
+### Leave
+- [x] Barber submits unpaid leave
+- [x] Manager approve / deny
+- [x] Approval auto-creates `leave_block` shift on rota
+- [x] Email to managers on submit
+- [x] Email to employee on approve / deny
+
+### Swaps
+- [x] Barber proposal form (pick own shift, request cover or direct swap)
+- [x] Manager approve / deny
+- [x] Email notifications on propose / approve / deny
 
 ### Documents
-- [ ] Upload from the Team drawer directly (currently redirects to Documents page)
-- [ ] Delete document
+- [x] Upload per employee (Supabase Storage, 10MB cap)
+- [x] Download via signed URL
 
-### General Polish
-- [ ] PWA manifest + service worker (installable on phone)
-- [ ] Mobile layout audit (rota grid is wide — consider card view on small screens)
-- [ ] Empty states and loading skeletons throughout
-- [ ] Audit log for key actions (leave approvals, rota publishes, barber changes)
+### Locations & settings
+- [x] Location CRUD with per-day opening hours (Mon–Sun, open/close, lunch mins)
+- [x] Profile settings + password change
+
+### Platform
+- [x] PWA manifest + service worker (installable on phone)
+- [x] Mobile responsive (responsive selects, h-dvh, popover widths)
+- [x] Loading skeletons per page
+- [x] In-app notification bell (real-time Supabase subscription)
+- [x] Barber-only "My Shifts" page
+
+### Infra
+- [x] Next.js 16 (App Router, Turbopack, TypeScript)
+- [x] shadcn/ui + Tailwind 3 + green pastel palette
+- [x] Migration runner via Supabase Management API
+- [x] GitHub Actions auto-deploy to Synology via Tailscale + SSH
+- [x] Cloudflare Tunnel (shared; lives at `/volume1/docker/cloudflared/`)
+- [x] Supabase free-tier keep-alive sidecar
+- [x] CI: brand check + typecheck + isolation tests
 
 ---
 
-## Suggestions
+## Backlog (after multi-tenant lands)
 
-- **Bulk shift entry** — apply the same shift (e.g. 9–18) to all barbers for a whole day in one click
-- **"My Shifts" barber view** — a simple list/calendar of upcoming shifts for the logged-in barber, optimised for mobile
-- **Print / export rota** — generate a printable PDF or simple HTML view of the week's rota
-- **Leave calendar view** — show approved leave as a calendar overlay on the rota grid so managers can see clashes at a glance
-- **Dashboard stats widget** — shifts this week, pending leave requests, pending swaps at a glance
-- **Repeat/recurring shifts** — mark a shift as repeating weekly so it auto-populates future weeks without copying
-- **Google Calendar sync** — export rota to iCal / Google Calendar per barber
+- [ ] Audit log table + UI (rota publishes, leave decisions, user changes, org-level events)
+- [ ] Print / export rota to PDF
+- [ ] Dark mode
+- [ ] Dashboard stats widget (shifts this week, pending leave, pending swaps)
+- [ ] Recurring / repeating shifts
+- [ ] Google Calendar / iCal export per barber
+- [ ] Bulk shift entry (same shift applied to all barbers for one day)
+- [ ] Unpublish a rota (currently one-way)
+- [ ] Infra rename sweep: `rotaflow` → `rokrota` in docker paths, container names, GitHub workflow, npm package name (deferred from Phase 0.5)

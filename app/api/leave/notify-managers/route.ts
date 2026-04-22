@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { format, parseISO } from "date-fns";
+import { EMAIL_FROM } from "@/lib/email";
 
 export async function POST(request: Request) {
   const resend = new Resend(process.env.RESEND_API_KEY);
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
 
     try {
       await resend.emails.send({
-        from: "RotaFlow <no-reply@rotaflow.app>",
+        from: EMAIL_FROM,
         to: email,
         subject: `Leave request from ${employee.full_name}`,
         html: `
@@ -71,6 +72,7 @@ export async function POST(request: Request) {
         type: "leave_request",
         message: `${employee.full_name} has requested leave for ${startFormatted}${endFormatted}.`,
         link: "/dashboard/leave",
+        org_id: leave.org_id,
       });
     } catch {
       // Don't fail the whole request

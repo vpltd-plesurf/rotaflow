@@ -78,6 +78,7 @@ export async function POST(request: Request) {
             type: "swap_request",
             message: `${employee.full_name} wants to swap their shift on ${shiftDate}.`,
             link: "/dashboard/swaps",
+            org_id: shift.org_id,
           }),
         ]);
       })
@@ -129,6 +130,7 @@ export async function POST(request: Request) {
         type: `swap_${statusLabel}`,
         message: `Your swap request for ${shiftDate} (${shiftTime}) has been ${statusLabel}.`,
         link: "/dashboard/swaps",
+        org_id: swap.org_id,
       }),
     ]);
 

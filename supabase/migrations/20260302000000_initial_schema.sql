@@ -1,4 +1,4 @@
--- RotaFlow Initial Schema
+-- ROKRota Initial Schema
 -- Run with: supabase db reset  (local) or apply in Supabase dashboard (cloud)
 
 -- =========================================================

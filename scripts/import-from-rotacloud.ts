@@ -1,5 +1,5 @@
 /**
- * Import script: RotaCloud CSV exports → RotaFlow Supabase
+ * Import script: RotaCloud CSV exports → ROKRota Supabase
  *
  * Usage:
  *   1. Make sure local Supabase is running: supabase start
@@ -49,7 +49,7 @@ function readCsv(filename: string): Record<string, string>[] {
 // ---- Main ----------------------------------------------------------------
 
 async function main() {
-  console.log("🚀  RotaFlow import starting...\n");
+  console.log("🚀  ROKRota import starting...\n");
 
   // ---- 1. Locations -------------------------------------------------------
   console.log("📍  Importing locations...");
@@ -114,7 +114,7 @@ async function main() {
       continue;
     }
 
-    // Determine RotaFlow role
+    // Determine ROKRota role
     let role: "admin" | "manager" | "barber" = "barber";
     if (accountType === "admin") role = "admin";
     else if (defaultRole?.includes("office staff")) role = "manager";

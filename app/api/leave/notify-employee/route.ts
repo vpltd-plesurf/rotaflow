@@ -48,6 +48,7 @@ export async function POST(request: Request) {
       type: `leave_${statusLabel}`,
       message: `Your leave request for ${dateRange} has been ${statusLabel}.`,
       link: "/dashboard/leave",
+      org_id: leave.org_id,
     }),
   ]);
 

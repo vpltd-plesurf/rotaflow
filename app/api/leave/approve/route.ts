@@ -11,13 +11,14 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  // Fetch the leave request
+  // Fetch the leave request (org_id used to stamp rotas/shifts we create)
   const { data: leave } = await supabase
     .from("leave_requests")
     .select("*")
     .eq("id", leaveRequestId)
     .single();
   if (!leave) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const orgId: string = leave.org_id;
 
   // Fetch employee's location
   const { data: employee } = await supabase
@@ -53,6 +54,7 @@ export async function POST(request: Request) {
           week_start: weekStart,
           published: false,
           created_by: user.id,
+          org_id: orgId,
         })
         .select("id")
         .single();
@@ -79,6 +81,7 @@ export async function POST(request: Request) {
           role_label: "Unpaid leave",
           notes: leave.reason ?? null,
           status: "leave_block",
+          org_id: orgId,
         });
         created++;
       }

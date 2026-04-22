@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, 'feature/**']
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Brand check (no "RotaFlow" in user-facing surfaces)
+        run: bash scripts/check-brand.sh
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci --force
+
+      - name: TypeScript typecheck
+        run: npx tsc --noEmit
+
+      # Isolation tests hit the real Supabase project, seed two throwaway
+      # orgs (namespaced with a timestamp nonce) using the service role,
+      # assert RLS, then clean up. Requires these repo secrets to be set:
+      #   NEXT_PUBLIC_SUPABASE_URL
+      #   NEXT_PUBLIC_SUPABASE_ANON_KEY
+      #   SUPABASE_SERVICE_ROLE_KEY
+      - name: RLS isolation tests
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: npm test

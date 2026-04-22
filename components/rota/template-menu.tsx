@@ -33,6 +33,7 @@ type Template = {
 
 interface TemplateMenuProps {
   locationId: string;
+  orgId: string;
   shifts: ShiftWithEmployee[];
   weekStart: string;
   ensureRota: () => Promise<string>;
@@ -47,6 +48,7 @@ function dateToDayIndex(dateStr: string): number {
 
 export function TemplateMenu({
   locationId,
+  orgId,
   shifts,
   weekStart,
   ensureRota,
@@ -96,6 +98,7 @@ export function TemplateMenu({
           name: templateName.trim(),
           location_id: locationId,
           created_by: (await supabase.auth.getUser()).data.user!.id,
+          org_id: orgId,
         })
         .select("id")
         .single();
@@ -109,6 +112,7 @@ export function TemplateMenu({
         start_time: s.start_time.slice(0, 5),
         end_time: s.end_time.slice(0, 5),
         role_label: s.role_label || null,
+        org_id: orgId,
       }));
 
       const { error: sErr } = await supabase
@@ -161,6 +165,7 @@ export function TemplateMenu({
           end_time: ts.end_time,
           role_label: ts.role_label || null,
           status: "scheduled" as const,
+          org_id: orgId,
         };
       });
 

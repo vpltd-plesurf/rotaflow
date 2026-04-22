@@ -9,7 +9,7 @@ export function getResend(): Resend {
   return resendInstance;
 }
 
-export const EMAIL_FROM = "RotaFlow <no-reply@rotaflow.app>";
+export const EMAIL_FROM = "ROKRota <noreply@rokrota.com>";
 
 export function getAppUrl(): string {
   return process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";

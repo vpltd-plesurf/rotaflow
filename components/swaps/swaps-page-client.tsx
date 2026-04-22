@@ -161,6 +161,7 @@ export function SwapsPageClient({ profile, swaps: initialSwaps, myShifts, collea
           <CardContent>
             <SwapProposalForm
               requesterId={profile.id}
+              orgId={profile.org_id}
               myShifts={myShifts}
               colleagues={colleagues}
               onSuccess={() => {

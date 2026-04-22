@@ -1,6 +1,6 @@
 # RotaCloud Reverse Engineering Specification
 
-**Project Name:** RotaFlow (Open-source RotaCloud Alternative)  
+**Project Name:** ROKRota (Open-source RotaCloud Alternative)  
 **Stack:** React/Next.js Frontend + Supabase Backend + Vercel Deployment  
 **Target:** MVP Launch (Core Features) → Full Feature Parity  
 **Date:** March 2026
@@ -873,7 +873,7 @@ CREATE INDEX idx_leave_requests_employee_id ON leave_requests(employee_id);
 
 ## CONCLUSION
 
-RotaFlow is a **highly replicable platform** targeting 84% feature parity with RotaCloud using modern, open-source technology. The Supabase + Vercel stack enables rapid development, low operational costs, and easy scalability. 
+ROKRota is a **highly replicable platform** targeting 84% feature parity with RotaCloud using modern, open-source technology. The Supabase + Vercel stack enables rapid development, low operational costs, and easy scalability. 
 
 **Key advantages:**
 - **Faster go-to-market:** 16 weeks to MVP vs. RotaCloud's years
